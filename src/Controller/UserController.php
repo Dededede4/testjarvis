@@ -12,19 +12,22 @@ use App\Form\UserType;
 
 use FOS\RestBundle\Controller\Annotations\RouteResource;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Doctrine\ORM\EntityManagerInterface;
 
 /**
  * @RouteResource("User", pluralize=false)
  */
 class UserController extends FOSRestController
 {
+	protected $em;
 
-	public function postUserAction(Request $request)
+	public function __construct(EntityManagerInterface $em)
 	{
-		$user = new User();
-		$user->setCreationdate(new \DateTime());
-		$user->setUpdatedate(new \DateTime());
+		$this->em = $em;
+	}
 
+	protected function updateUserWithRequest(Request $request, User $user)
+	{
 		$form = $this->createForm(UserType::class, $user);
 		$data = json_decode($request->getContent(), true);
 		$form->submit($data);
@@ -33,17 +36,32 @@ class UserController extends FOSRestController
 			$em = $this->getDoctrine()->getManager();
 			$em->persist($user);
 			$em->flush();
-			return new Response();
+			return $this->handleView($this->view($user, Response::HTTP_CREATED));
 		}
-		return new Response('Error', Response::HTTP_FORBIDDEN);
+		return $this->handleView($this->view(['status' => 'error'], Response::HTTP_FORBIDDEN));
 	}
+
+	public function postUserAction(Request $request)
+	{
+		$user = new User();
+		$user->setCreationdate(new \DateTime());
+		$user->setUpdatedate(new \DateTime());
+		return $this->updateUserWithRequest($request, $user);
+	}
+
+	public function putUserAction(Request $request, User $user)
+    {
+    	$user->setUpdatedate(new \DateTime());
+    	return $this->updateUserWithRequest($request, $user);
+    }
+
 
 	// L’API doit comprendre un listener utilisant Logger pour écrire dans les logs chaque modification d’un enregistrement.
 
 	public function getUsersAction()
     {
-
-    } // "get_users"            [GET] /users
+    	return $this->handleView($this->view($this->em->getRepository(User::class)->findAll()));
+    }
 
 
     public function getUserAction(User $user)
@@ -51,9 +69,10 @@ class UserController extends FOSRestController
         return $this->handleView($this->view($user));
     }
 
-    public function editUserAction($slug)
-    {} // "edit_user"            [GET] /users/{slug}/edit
-
-    public function deleteUserAction($slug)
-    {} // "delete_user"          [DELETE] /users/{slug}
+    public function deleteUserAction(User $user)
+    {
+    	$this->em->remove($user);
+		$this->em->flush();
+		return new Response();
+    }
 }

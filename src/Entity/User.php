@@ -32,6 +32,11 @@ class User
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Assert\NotBlank
+     * @Assert\Length(
+     *      min = 2,
+     *      max = 50
+     * )
      */
     private $lastname;
 
@@ -55,7 +60,7 @@ class User
         return $this->firstname;
     }
 
-    public function setFirstname(string $firstname): self
+    public function setFirstname(string $firstname = null): self
     {
         $this->firstname = $firstname;
 
@@ -67,7 +72,7 @@ class User
         return $this->lastname;
     }
 
-    public function setLastname(string $lastname): self
+    public function setLastname(string $lastname = null): self
     {
         $this->lastname = $lastname;
 
