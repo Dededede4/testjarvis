@@ -18,12 +18,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
  */
 class UserController extends FOSRestController
 {
-	/**
-	 * Create User.
-	 * @Rest\Post("/user")
-	 *
-	 * @return Response
-	 */
+
 	public function postUserAction(Request $request)
 	{
 		$user = new User();
@@ -33,7 +28,7 @@ class UserController extends FOSRestController
 		$form = $this->createForm(UserType::class, $user);
 		$data = json_decode($request->getContent(), true);
 		$form->submit($data);
-		
+
 		if ($form->isSubmitted() && $form->isValid()) {
 			$em = $this->getDoctrine()->getManager();
 			$em->persist($user);
@@ -42,4 +37,23 @@ class UserController extends FOSRestController
 		}
 		return new Response('Error', Response::HTTP_FORBIDDEN);
 	}
+
+	// L’API doit comprendre un listener utilisant Logger pour écrire dans les logs chaque modification d’un enregistrement.
+
+	public function getUsersAction()
+    {
+
+    } // "get_users"            [GET] /users
+
+
+    public function getUserAction(User $user)
+    {
+        return $this->handleView($this->view($user));
+    }
+
+    public function editUserAction($slug)
+    {} // "edit_user"            [GET] /users/{slug}/edit
+
+    public function deleteUserAction($slug)
+    {} // "delete_user"          [DELETE] /users/{slug}
 }
